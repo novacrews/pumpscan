@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 interface HeaderProps {
   totalCount: number;
@@ -31,6 +32,7 @@ export default function Header({ totalCount, filteredCount, lastUpdated }: Heade
           </div>
 
           <div className="flex items-center gap-5 text-[10px]">
+            <Link href="/alerts" className="text-gray-400 hover:text-accent-cyan transition-colors">🔔 Alerts</Link>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse-glow" />
               <span className="text-accent-green font-medium">LIVE</span>
