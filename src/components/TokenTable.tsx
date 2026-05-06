@@ -3,6 +3,7 @@
 import { ScannerToken, SortConfig, SortField } from "@/types/token";
 import { formatPrice, formatVolume, formatPercent, formatAge, formatCompact } from "@/lib/utils";
 import { RiskBadge, RiskFlags } from "./RiskBadge";
+import { useRouter } from "next/navigation";
 
 interface TokenTableProps {
   tokens: ScannerToken[];
@@ -77,6 +78,7 @@ const COLUMNS: { label: string; field: SortField; align?: "right" | "center" }[]
 ];
 
 export default function TokenTable({ tokens, sort, toggleSort, loading }: TokenTableProps) {
+  const router = useRouter();
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -131,7 +133,7 @@ export default function TokenTable({ tokens, sort, toggleSort, loading }: TokenT
             <tr
               key={`${token.pairAddress}-${i}`}
               className="border-b border-border/30 hover:bg-bg-hover/70 transition-colors cursor-pointer group"
-              onClick={() => window.open(`https://pump.fun/coin/${token.address}`, "_blank")}
+              onClick={() => router.push(`/token/${token.address}`)}
             >
               <td className="px-3 py-2 text-gray-600 text-[10px]">{i + 1}</td>
 
