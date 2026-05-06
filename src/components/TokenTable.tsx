@@ -39,8 +39,13 @@ function TxnBar({ buys, sells }: { buys: number; sells: number }) {
 }
 
 function SocialIcons({ token }: { token: ScannerToken }) {
+  const pumpUrl = `https://pump.fun/coin/${token.address}`;
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
+      <a href={pumpUrl} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}
+        className="text-[10px] text-accent-green hover:text-white font-bold" title="Pump.fun">P</a>
+      <a href={token.dexUrl} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}
+        className="text-[10px] text-gray-500 hover:text-accent-cyan" title="DexScreener">📊</a>
       {token.hasTwitter && (
         <a href={token.twitterUrl} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}
           className="text-[10px] text-gray-500 hover:text-accent-cyan" title="Twitter">𝕏</a>
@@ -126,7 +131,7 @@ export default function TokenTable({ tokens, sort, toggleSort, loading }: TokenT
             <tr
               key={`${token.pairAddress}-${i}`}
               className="border-b border-border/30 hover:bg-bg-hover/70 transition-colors cursor-pointer group"
-              onClick={() => window.open(token.dexUrl, "_blank")}
+              onClick={() => window.open(`https://pump.fun/coin/${token.address}`, "_blank")}
             >
               <td className="px-3 py-2 text-gray-600 text-[10px]">{i + 1}</td>
 
