@@ -8,43 +8,43 @@ interface HeaderProps {
 
 export default function Header({ totalCount, filteredCount, lastUpdated }: HeaderProps) {
   return (
-    <header className="border-b border-border bg-bg-secondary">
-      <div className="max-w-[1600px] mx-auto px-4 py-4">
+    <header className="bg-bg-secondary border-b border-border">
+      <div className="max-w-[1600px] mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center text-black font-bold text-lg">
-                P
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center text-black font-bold text-base">
+                ⚡
               </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent-green animate-pulse-glow" />
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent-green animate-pulse-glow" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">
+              <h1 className="text-lg font-bold tracking-tight leading-none">
                 <span className="text-accent-cyan text-glow-cyan">PUMP</span>
                 <span className="text-white">SCAN</span>
-                <span className="text-accent-purple text-xs ml-1 font-normal">.fun</span>
+                <span className="text-accent-purple text-xs ml-1 font-normal opacity-70">.fun</span>
               </h1>
-              <p className="text-[10px] text-gray-500 tracking-widest uppercase">
-                Real-Time Token Scanner
+              <p className="text-[9px] text-gray-600 tracking-[0.2em] uppercase mt-0.5">
+                Solana Token Intelligence
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse-glow" />
-              <span className="text-gray-400">LIVE</span>
+          <div className="flex items-center gap-5 text-[10px]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse-glow" />
+              <span className="text-accent-green font-medium">LIVE</span>
             </div>
             <div className="text-gray-400">
-              <span className="text-accent-cyan font-semibold">{filteredCount}</span>
+              <span className="text-accent-cyan font-bold">{filteredCount}</span>
               {filteredCount !== totalCount && (
-                <span className="text-gray-600"> / {totalCount}</span>
+                <span className="text-gray-600">/{totalCount}</span>
               )}
-              {" "}tokens
+              <span className="ml-1">tokens</span>
             </div>
             {lastUpdated && (
-              <div className="text-gray-600">
-                Updated {lastUpdated.toLocaleTimeString()}
+              <div className="text-gray-600 hidden sm:block">
+                {lastUpdated.toLocaleTimeString()}
               </div>
             )}
           </div>
