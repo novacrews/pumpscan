@@ -8,6 +8,7 @@ import { formatPrice, formatVolume, formatPercent, formatAge, formatCompact } fr
 import { RiskBadge, RiskFlags } from "@/components/RiskBadge";
 import { getRiskLevel } from "@/lib/risk";
 import TokenChart from "@/components/TokenChart";
+import WhaleTracker from "@/components/WhaleTracker";
 
 export default function TokenPage() {
   const params = useParams();
@@ -180,6 +181,15 @@ export default function TokenPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Whale Tracker */}
+        <div className="bg-bg-card border border-border rounded-xl p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs text-gray-400 uppercase tracking-wider font-medium">🐋 Whale Tracker</h2>
+            <span className="text-[9px] text-gray-600">Top 20 holders · 30s refresh</span>
+          </div>
+          <WhaleTracker address={token.address} />
         </div>
 
         {/* Links & Socials */}
