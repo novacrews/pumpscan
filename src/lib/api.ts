@@ -1,8 +1,6 @@
 import { ScannerToken, ScanMode } from "@/types/token";
 import { analyzeRisk } from "./risk";
 
-const DEXSCREENER = "https://api.dexscreener.com";
-
 interface DexPair {
   chainId: string;
   dexId: string;
@@ -29,28 +27,14 @@ interface DexPair {
     websites?: { label: string; url: string }[];
     socials?: { type: string; url: string }[];
   };
-  profile?: {
+  _profile?: {
     icon?: string;
     description?: string;
     links?: { type?: string; label?: string; url: string }[];
   };
 }
 
-interface TokenProfile {
-  chainId: string;
-  tokenAddress: string;
-  url?: string;
-  icon?: string;
-  description?: string;
-  links?: { type?: string; label?: string; url: string }[];
-}
-
-// Cache for token profiles (enrichment data)
-let profileCache: Map<string, TokenProfile> = new Map();
-let profileCacheTime = 0;
-const PROFILE_CACHE_TTL = 60_000; // 1 min
-
-function extractSocials(pair: DexPair, profile?: TokenProfile) {
+function extractSocials(pair: DexPair) {
   let hasWebsite = false;
   let hasTwitter = false;
   let hasTelegram = false;
@@ -72,6 +56,7 @@ function extractSocials(pair: DexPair, profile?: TokenProfile) {
   }
 
   // From profile enrichment
+  const profile = pair._profile;
   if (profile) {
     description = profile.description;
     if (profile.links) {
@@ -95,15 +80,19 @@ function extractSocials(pair: DexPair, profile?: TokenProfile) {
   return { hasWebsite, hasTwitter, hasTelegram, twitterUrl, telegramUrl, websiteUrl, description };
 }
 
-function transformPair(pair: DexPair, profile?: TokenProfile): ScannerToken {
-  const socials = extractSocials(pair, profile);
-  const imageUrl = pair.info?.imageUrl || profile?.icon;
+function transformPair(pair: DexPair): ScannerToken {
+  const socials = extractSocials(pair);
+  const imageUrl = pair.info?.imageUrl || pair._profile?.icon;
 
   const token: ScannerToken = {
     address: pair.baseToken.address,
     name: pair.baseToken.name,
     symbol: pair.baseToken.symbol,
-    imageUrl: imageUrl?.startsWith("http") ? imageUrl : imageUrl ? `https://cdn.dexscreener.com/cms/images/${imageUrl}?width=64&height=64&fit=crop&quality=95&format=auto` : undefined,
+    imageUrl: imageUrl?.startsWith("http")
+      ? imageUrl
+      : imageUrl
+        ? `https://cdn.dexscreener.com/cms/images/${imageUrl}?width=64&height=64&fit=crop&quality=95&format=auto`
+        : undefined,
     priceUsd: parseFloat(pair.priceUsd || "0") || 0,
     priceChange5m: pair.priceChange?.m5 ?? 0,
     priceChange1h: pair.priceChange?.h1 ?? 0,
@@ -132,7 +121,6 @@ function transformPair(pair: DexPair, profile?: TokenProfile): ScannerToken {
     ...socials,
   };
 
-  // Run risk analysis
   const risk = analyzeRisk(token);
   token.riskScore = risk.score;
   token.riskFlags = risk.riskFlags;
@@ -141,130 +129,30 @@ function transformPair(pair: DexPair, profile?: TokenProfile): ScannerToken {
   return token;
 }
 
-async function fetchProfiles(): Promise<Map<string, TokenProfile>> {
-  if (Date.now() - profileCacheTime < PROFILE_CACHE_TTL && profileCache.size > 0) {
-    return profileCache;
-  }
-  try {
-    const res = await fetch(`${DEXSCREENER}/token-profiles/latest/v1`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return profileCache;
-    const data: TokenProfile[] = await res.json();
-    const map = new Map<string, TokenProfile>();
-    for (const p of data) {
-      if (p.chainId === "solana") {
-        map.set(p.tokenAddress, p);
-      }
-    }
-    profileCache = map;
-    profileCacheTime = Date.now();
-    return map;
-  } catch {
-    return profileCache;
-  }
-}
-
 export async function fetchTokens(mode: ScanMode, query?: string): Promise<ScannerToken[]> {
   try {
-    // Fetch profiles for enrichment in parallel
-    const profilesPromise = fetchProfiles();
+    const params = new URLSearchParams({ mode });
+    if (query) params.set("q", query);
 
-    let pairs: DexPair[] = [];
+    const res = await fetch(`/api/tokens?${params.toString()}`, {
+      cache: "no-store",
+    });
 
-    switch (mode) {
-      case "new": {
-        // Search for newest pumpfun tokens
-        const res = await fetch(`${DEXSCREENER}/latest/dex/search?q=pumpfun`, {
-          cache: "no-store",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          pairs = (data.pairs || []).filter(
-            (p: DexPair) => p.chainId === "solana" && p.dexId === "pumpfun"
-          );
-        }
-        break;
-      }
-      case "trending": {
-        // Get boosted/trending tokens, then fetch their pairs
-        const boostRes = await fetch(`${DEXSCREENER}/token-boosts/latest/v1`, {
-          cache: "no-store",
-        });
-        if (boostRes.ok) {
-          const boosts = await boostRes.json();
-          const solanaAddresses = boosts
-            .filter((b: { chainId: string }) => b.chainId === "solana")
-            .map((b: { tokenAddress: string }) => b.tokenAddress)
-            .slice(0, 30);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
 
-          // Batch fetch pairs (max 30 addresses per call)
-          if (solanaAddresses.length > 0) {
-            const tokenStr = solanaAddresses.join(",");
-            const pairsRes = await fetch(
-              `${DEXSCREENER}/latest/dex/tokens/${tokenStr}`,
-              { cache: "no-store" }
-            );
-            if (pairsRes.ok) {
-              const pairsData = await pairsRes.json();
-              pairs = (pairsData.pairs || []).filter(
-                (p: DexPair) => p.chainId === "solana"
-              );
-            }
-          }
-        }
-        break;
-      }
-      case "graduating": {
-        // Tokens about to graduate from pump.fun to Raydium
-        // These have higher liquidity and are near the bonding curve threshold
-        const res = await fetch(`${DEXSCREENER}/latest/dex/search?q=pumpfun`, {
-          cache: "no-store",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          pairs = (data.pairs || [])
-            .filter(
-              (p: DexPair) =>
-                p.chainId === "solana" &&
-                p.dexId === "pumpfun" &&
-                (p.marketCap ?? 0) > 30000
-            )
-            .sort((a: DexPair, b: DexPair) => (b.marketCap ?? 0) - (a.marketCap ?? 0));
-        }
-        break;
-      }
-      case "search": {
-        if (!query) return [];
-        const res = await fetch(
-          `${DEXSCREENER}/latest/dex/search?q=${encodeURIComponent(query)}`,
-          { cache: "no-store" }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          pairs = (data.pairs || []).filter(
-            (p: DexPair) => p.chainId === "solana"
-          );
-        }
-        break;
-      }
+    const data = await res.json();
+
+    // Handle search response format
+    if (data.pairs && data.source === "search") {
+      return data.pairs.map(transformPair);
     }
 
-    const profiles = await profilesPromise;
-
-    // Dedupe by base token address (keep highest liquidity pair per token)
-    const seen = new Map<string, DexPair>();
-    for (const p of pairs) {
-      const addr = p.baseToken.address;
-      const existing = seen.get(addr);
-      if (!existing || (p.liquidity?.usd ?? 0) > (existing.liquidity?.usd ?? 0)) {
-        seen.set(addr, p);
-      }
+    // Handle aggregated response (array of enriched pairs)
+    if (Array.isArray(data)) {
+      return data.map(transformPair);
     }
 
-    return Array.from(seen.values()).map((p) =>
-      transformPair(p, profiles.get(p.baseToken.address))
-    );
+    return [];
   } catch (error) {
     console.error(`Failed to fetch tokens (${mode}):`, error);
     return [];
