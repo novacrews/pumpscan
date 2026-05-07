@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import ScanTabs from "@/components/ScanTabs";
 import Filters from "@/components/Filters";
 import TokenTable from "@/components/TokenTable";
+import { BannerAd, FeaturedAds } from "@/components/AdBanner";
 import { useTokens } from "@/hooks/useTokens";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-bg-primary">
       <Header totalCount={totalCount} filteredCount={filteredCount} lastUpdated={lastUpdated} />
 
+      <BannerAd />
       <ScanTabs
         mode={scanMode}
         setMode={setScanMode}
@@ -24,6 +26,7 @@ export default function Home() {
         onSearch={doSearch}
       />
 
+      <FeaturedAds />
       <Filters
         filters={filters}
         setFilters={setFilters}

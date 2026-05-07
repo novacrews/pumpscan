@@ -33,6 +33,7 @@ export default function Header({ totalCount, filteredCount, lastUpdated }: Heade
 
           <div className="flex items-center gap-5 text-[10px]">
             <Link href="/alerts" className="text-gray-400 hover:text-accent-cyan transition-colors">🔔 Alerts</Link>
+            <Link href="/advertise" className="text-gray-400 hover:text-accent-yellow transition-colors">📢 Advertise</Link>
             <Link href="/pricing" className="text-accent-purple hover:text-accent-purple/80 transition-colors font-medium">⚡ Pro</Link>
             <Link href="/login" className="px-3 py-1 bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 rounded-lg hover:bg-accent-cyan/20 transition-colors">Sign In</Link>
             <div className="flex items-center gap-1.5">
